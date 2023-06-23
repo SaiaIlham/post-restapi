@@ -5,70 +5,67 @@ const bcrypt = require('bcryptjs')
 const User = require('../models/User')
 
 // import validation
-const { registerValidation, 
-    loginValidation 
-} = require('../config/validation')
+const {loginValidation, registerValidation} = require('../config/validation')
 
-function result (succ, msg, details){
-    if (details) {
+function result(succ, msg, details){
+    if(details){
         return{
-            succes: succ,
+            success: succ,
             message: msg,
-            data: details
+            data: details 
         }
-    }else {
+    } else{
         return{
-            succes: succ,
-            mesaage: msg
+            success: succ,
+            message: msg
         }
     }
 }
 
-//register
-router.post('/register', async (req,res) =>{
-    const { error } = registerValidation(req.body)
-    if(error) return res.status(200).json(result(0,error.details[0].message))
+// register
+router.post('/register', async (req, res)=>{
+    const {error} = registerValidation(req.body)
+    if(error) return res.status(200).json(result(0, error.details[0].message))
 
-    //username exist
-    const usernamaExist = await User.findOne ({ username: req.body.username})
-    if(usernameExist) return res.status(200).json(result(0, 'Username already exists!'))
+    // username exist
+    const usernameExist = await User.findOne({
+        username: req.body.username
+    })
+    if(usernameExist) return res.status(200).json(result(0,'Username already exists!'))
 
-    //hash password
-    const salt = await bcrypt.genSalat(10)
-    const haspassword  = await bcrypt.hash(req.body.haspassword, salt)
+    // hash password
+    const salt = await bcrypt.genSalt(10)
+    const hashPassword = await bcrypt.hash(req.body.password, salt)
 
     const user = new User({
-        username:req.body.username,
+        username: req.body.username,
         password: hashPassword
     })
 
-    try {
+    try{
         const saveUser = await user.save()
-        res.status(200).json(result(1, 'Register User Succes!'))
-    }catch (error) {
-        res.status(200).json(result(0, ' Register User Failed!'))
-
+        res.status(200).json(result(1,'Register User Success!', saveUser))
+    } catch (error){
+        res.status(200).json(result(0,'Register User Failed'))
     }
 })
 
-//login
-router.post('/login', async (req, res)=>{
-    const { 
-        error 
-    } = loginValidation(req.body)
-    if(error) return res.status(200).json(result(0, error.details[0].message))
+// login
+router.post('/login', async(req,res)=>{
+    const {error} = loginValidation(req.body)
+    if (error) return res.status(200).json(result(0, error.details[0].message))
 
-    //username exist
+    // username exist
     const user = await User.findOne({
         username: req.body.username
     })
-    if(!user) return res.status(200).json(result(0, 'Your username is not registered!'))
+    if(!user) return res.status(200).json(result(0,'Your username is not registered!'))
 
-    //check password
+    // check password
     const validPwd = await bcrypt.compare(req.body.password, user.password)
-    if (!validPwd) return res.status(200).json(result(0, 'Your password is wrong!'))
+    if (!validPwd) return res.status(200).json(result(0,'Your Password is Wrong!'))
 
-    return res.status(200).json(result(1, 'Login user succes!', user))
+    return res.status(200).json(result(1,'Login user Success!', user))
 })
 
 module.exports = router
